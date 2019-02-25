@@ -80,7 +80,6 @@ bool Game::ProcessEvents()
 void Game::Update(int _currentState, float deltatime) {
 
 	auto input = InputManager::GetInstance();
-	TranslateInput(deltatime);
 	sf::Vector2i mousePos = input->GetMousePosition(m_pWindow);
 
 	switch (_currentState)
@@ -151,6 +150,19 @@ void Game::Update(int _currentState, float deltatime) {
 		break;
 	case PLAYING:
 
+		// GET INPUT FROM CLIENT/SERVER
+		// ASSIGN THEM TO USER
+
+		
+
+
+
+		for (auto &U : m_Users) {
+
+			U.Update(deltatime);
+
+		}
+
 		for (auto &T : m_tanks) {
 			if (T.GetId() == m_MyUser)
 			{
@@ -158,18 +170,12 @@ void Game::Update(int _currentState, float deltatime) {
 			}
 			else
 			{
-				for (auto &U : m_Users) {
-					if (T.GetId() == U.GetID())
-					{
-						T.Update(U, deltatime);
-						break;
-					}
-				}
+
 			}
 
 			if (T.GetKills() == 5)
 			{
-
+				// Win the game
 			}
 		}
 
@@ -177,7 +183,6 @@ void Game::Update(int _currentState, float deltatime) {
 
 		break;
 	case SCOREBOARD:
-
 
 		break;
 	default:
@@ -219,31 +224,35 @@ void Game::Draw(int _currentState) {
 	m_pWindow->display();
 }
 
-void Game::TranslateInput(float deltatime) {
+void Game::HandleKeyBoard(InputManager &input) {
+	// Controls
+	if (input.IsKeyActionTriggered(K_UP))
+		m_KeyBoard[K_UP] = 1;
+	else m_KeyBoard[K_UP] = 0;
 
-	auto input = InputManager::GetInstance();
+	if (input.IsKeyActionTriggered(K_DOWN))
+		m_KeyBoard[K_DOWN] = 1;
+	else m_KeyBoard[K_DOWN] = 0;
 
-	if (input->IsKeyActionTriggered(K_UP)) {
+	if (input.IsKeyActionTriggered(K_LEFT))
+		m_KeyBoard[K_LEFT] = 1;
+	else m_KeyBoard[K_LEFT] = 0;
 
-	}
-	if (input->IsKeyActionTriggered(K_DOWN)) {
-
-	}
-	if (input->IsKeyActionTriggered(K_LEFT)) {
-
-	}
-	if (input->IsKeyActionTriggered(K_RIGHT)) {
-
-	}
-	if (input->isMouseActionTriggered(M_LEFT))
-	{
-
-	}
-	if (input->isMouseActionTriggered(M_RIGHT))
-	{
-
-	}
-
+	if (input.IsKeyActionTriggered(K_RIGHT))
+		m_KeyBoard[K_RIGHT] = 1;
+	else m_KeyBoard[K_RIGHT] = 0;
+}
+void Game::HandleMouse(InputManager &input) {
+	if (input.isMouseActionTriggered(M_LEFT))
+		m_Mouse[M_LEFT] = 1;
+	else m_Mouse[M_LEFT] = 0;
+	if (input.isMouseActionTriggered(M_RIGHT))
+		m_Mouse[M_RIGHT] = 1;
+	else m_Mouse[M_RIGHT] = 0;
+}
+void Game::ResolveInput(InputManager &input) {
+	HandleKeyBoard(input);
+	HandleMouse(input);
 }
 
 // Create
@@ -251,6 +260,7 @@ void Game::Init(int x, int y, float tankRadius, float bulletRadius) {
 	m_GameState = MENU;
 	CreateCollisionManager(x, y, tankRadius, bulletRadius);
 	CreateMap();
+	CreateUsers();
 	CreateTanks();
 	CreateInputContext();
 }
@@ -262,6 +272,19 @@ void Game::CreateUsers() {
 		User newUser;
 		newUser.SetID(i);
 		m_Users.emplace_back(newUser);
+	}
+}
+void Game::CreateUsers() {
+	m_Users = {};
+	for (int id = 0; id < PLAYER_COUNT; id++)
+	{
+		User newUser;
+		newUser.Init(id);
+		if (id == 0)
+		{
+			bool isPlayer = true;
+			newUser.SetPLayer(isPlayer);
+		}
 	}
 }
 void Game::CreateTanks() {

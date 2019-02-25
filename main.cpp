@@ -20,8 +20,6 @@ int main(int argc, char* argv[]) {
 	float deltaTime;
 	bool isRunning = true;
 
-	// This is going to happen once, after connection with server but before game is starting
-	game.CreateUsers();
 	 while (isRunning)
 	 {
 		 deltaTime = clock.restart().asSeconds();

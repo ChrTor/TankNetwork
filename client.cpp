@@ -293,6 +293,133 @@ void Client::Connect_Ping() {
 	}
 }
 
+void Client::Running(std::vector<User> &users) {
+	WinSockStart winsock;
+
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock == INVALID_SOCKET) {
+		on_socket_error();
+	}
+	sockaddr_in m_server_addr;
+	m_server_addr.sin_family = AF_INET;
+	m_server_addr.sin_port = htons(4444);
+	m_server_addr.sin_addr.S_un.S_un_b.s_b1 = 127;
+	m_server_addr.sin_addr.S_un.S_un_b.s_b2 = 0;
+	m_server_addr.sin_addr.S_un.S_un_b.s_b3 = 0;
+	m_server_addr.sin_addr.S_un.S_un_b.s_b4 = 1;
+
+	char request[128];
+	int currentNumber;
+	
+	char delim[2] = { ',', '\0' };
+
+	// Here it is!
+	for (auto &P : users) {
+		 char count[3];
+		 // Pos
+		 sprintf_s(count, "%d", P.GetPosX());
+		 strcat_s(request, sizeof(request), count);
+		 strcat_s(request, sizeof(request), delim);
+
+		 sprintf_s(count, "%d", P.GetPosY());
+		 strcat_s(request, sizeof(request), count);
+		 strcat_s(request, sizeof(request), delim);
+
+		 // Dir
+		 sprintf_s(count, "%d", P.GetMoveDirX());
+		 strcat_s(request, sizeof(request), count);
+		 strcat_s(request, sizeof(request), delim);
+
+		 sprintf_s(count, "%d", P.GetMoveDirY());
+		 strcat_s(request, sizeof(request), count);
+		 strcat_s(request, sizeof(request), delim);
+
+		 for (auto &I : P.GetInput()) {
+			 sprintf_s(count, "%d", I);
+			 strcat_s(request, sizeof(request), count);
+			 strcat_s(request, sizeof(request), delim);
+		 }
+
+		 sprintf_s(count, "%d", P.GetMouseX());
+		 strcat_s(request, sizeof(request), count);
+		 strcat_s(request, sizeof(request), delim);
+
+		 sprintf_s(count, "%d", P.GetMouseY());
+		 strcat_s(request, sizeof(request), count);
+		 strcat_s(request, sizeof(request), delim);
+
+		 for (auto &BP : P.GetBulletPos()) {
+			 sprintf_s(count, "%d", BP.x);
+			 strcat_s(request, sizeof(request), count);
+			 strcat_s(request, sizeof(request), delim);
+
+			 sprintf_s(count, "%d", BP.y);
+			 strcat_s(request, sizeof(request), count);
+			 strcat_s(request, sizeof(request), delim);
+		 }
+
+		 for (auto &BD : P.GetBulletDir()) {
+			 sprintf_s(count, "%d", BD.x);
+			 strcat_s(request, sizeof(request), count);
+			 strcat_s(request, sizeof(request), delim);
+
+			 sprintf_s(count, "%d", BD.y);
+			 strcat_s(request, sizeof(request), count);
+			 strcat_s(request, sizeof(request), delim);
+		 }
+	}
+
+	if (connect(sock, (const sockaddr *)&m_server_addr, sizeof(struct sockaddr_in)) != 0)
+		close_and_socket_error(sock);
+
+	int result = send(sock, request, sizeof(request), 0);
+	if (result == SOCKET_ERROR)
+	{
+		on_socket_error();
+
+		shutdown(sock, SD_BOTH);
+		closesocket(sock);
+	}
+
+	printf("<- %s\n", request);
+
+	char response[128] = {};
+	result = recv(sock, response, sizeof(response) - 1, 0);
+	if (result == SOCKET_ERROR)
+	{
+		on_socket_error();
+
+		shutdown(sock, SD_BOTH);
+		closesocket(sock);
+	}
+	else if (result == 0) // half-closed
+	{
+		on_socket_error();
+
+		shutdown(sock, SD_BOTH);
+		closesocket(sock);
+	}
+	else
+	{
+		//Area Ending
+		shutdown(sock, SD_BOTH);
+		closesocket(sock);
+
+		response[result] = '\0';
+		printf("-> %s\n", response);
+
+		//Problem Area
+		std::vector<char *> components = splitString(response);
+		for (int i = 0; i < PLAYER_COUNT; i++)
+		{
+			for (int j = 0; j < DATA_COUNT; j++)
+			{
+				m_PlayerData[i][j] = components[i][j];
+			}
+		}
+
+	}
+}
 
 void Client::Disconnect() {
 	WinSockStart winsock;

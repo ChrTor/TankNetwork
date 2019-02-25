@@ -29,22 +29,13 @@ void Tank::Init(int id, sf::Vector2f position) {
 	m_DeathTimer = 2.0f;
 	IsAlive = true;
 }
-void Tank::Update(InputManager &input, sf::Vector2i &mousePos, float &deltaTime) {
+
+void Tank::Update(float &deltaTime, std::vector<int> &input, int &mousex, int &mousey) {
+
 	if (IsAlive)
 	{
-		// Sense Input
-		int keyPressed[4] = {};
-		HandleKeyboard(input, keyPressed);
-		int buttonPressed[2] = {};
-		HandleMouse(input, buttonPressed);
-
-		// Handle KeyStrokes
-		MoveDirection.x = (float)(keyPressed[K_RIGHT] - keyPressed[K_LEFT]);
-		MoveDirection.y = (float)(keyPressed[K_DOWN] - keyPressed[K_UP]);
-
-		// Handle Mouse Clicks
-		sf::Vector2i m_Pos = mousePos;
-		if (buttonPressed[M_LEFT])
+		// Check For Shooting
+		if (input[4] > 0)
 		{
 			if (m_CoolDown <= 0.0f)
 			{
@@ -61,59 +52,9 @@ void Tank::Update(InputManager &input, sf::Vector2i &mousePos, float &deltaTime)
 		}
 		m_CoolDown -= 1.5f * deltaTime;
 
-		if (buttonPressed[M_RIGHT])
-		{
-
-		}
-
-		// Execute Update
-		Move(deltaTime, mousePos);
-	}
-	else
-	{
-		// Resolve DeathTimer
-		if (RunDeathTimer(deltaTime))
-		{
-			Init(m_ID, sf::Vector2f(100.f, 100.f));
-			m_DeathTimer = 2.0f;
-		}
-	}
-	for (auto &B : m_bullets) {
-		if (B.GetAlive())
-		{
-			B.Update(deltaTime);
-		}
-	}
-}
-void Tank::Update(User &user, float &deltaTime) {
-	if (IsAlive)
-	{
-		std::vector<int> keyPressed = user.GetInput();
-
-		MoveDirection.x = keyPressed[1] - keyPressed[0];
-		MoveDirection.y = keyPressed[3] - keyPressed[2];
-
-		// Handle Mouse Clicks
-		sf::Vector2i m_Pos = sf::Vector2i(user.GetMouseX(), user.GetMouseY());
-		if (keyPressed[4] == 1)
-		{
-			if (m_CoolDown <= 0.0f)
-			{
-				for (auto &B : m_bullets) {
-					if (!B.GetAlive())
-					{
-						B.Init(m_Position, 45.0f, b_Direction);
-						m_CoolDown = 1.5f;
-						break;
-					}
-					continue;
-				}
-			}
-		}
-		m_CoolDown -= 1.5f * deltaTime;
-
-		// Execute Update
-		Move(deltaTime, m_Pos);
+		// Execute Mouse Update
+		sf::Vector2i mousePos(mousex, mousey);
+		Move(deltaTime, input, mousePos);
 	}
 	else
 	{
@@ -132,7 +73,6 @@ void Tank::Update(User &user, float &deltaTime) {
 		}
 	}
 }
-
 
 void Tank::Draw(sf::RenderWindow* window) {
 
@@ -154,25 +94,28 @@ void Tank::Draw(sf::RenderWindow* window) {
 	}
 }
 
-
 // Position
-void Tank::Move(float &deltatime, sf::Vector2i &mousePos) {
-	if (MoveDirection != sf::Vector2f(0.0f, 0.0f))
-	{
-		// New Position
-		m_Position += MoveDirection * (Speed * deltatime);
-		// New Rotation
-		t_angle = AngleTank(MoveDirection);
-	}
+void Tank::Move(float &deltatime, std::vector<int> &input, sf::Vector2i &mousePos) {
+	
+	// New MoveDirection
+	MoveDirection.x = input[K_LEFT] - input[K_RIGHT];
+	MoveDirection.y = input[K_UP] - input[K_DOWN];
 
+	// New Position
+	m_Position += MoveDirection * (Speed * deltatime);
+	// New Direction
 	b_Direction = DirectionI(m_Position, mousePos);
+	// New Barrel Angle
 	b_angle = AngleBarrel(m_Position, mousePos);
+	// New Tank Angle
+	t_angle = AngleTank(MoveDirection);
 
-	// Rotation
-		//Direction
+	// New Rotation Of Sprites
 	m_Tsprite.setRotation(t_angle);
 	m_Bsprite.setRotation(b_angle);
 }
+
+
 void Tank::SetPosition(sf::Vector2f pos) {
 	m_Position = pos;
 }
@@ -242,40 +185,6 @@ void Tank::SetTexture(sf::Texture *tank, sf::Texture *barrel, sf::Texture *bulle
 		newBullet.SetTextures(m_tBullet);
 		m_bullets.emplace_back(newBullet);
 	}
-}
-
-// Handle Input  TODO:: Will move this to Player Class
-int* Tank::HandleKeyboard(InputManager &input, int keyPressed[]) {
-
-	// Controls
-	if (input.IsKeyActionTriggered(K_UP))
-		keyPressed[K_UP] = 1;
-	else keyPressed[K_UP] = 0;
-
-	if (input.IsKeyActionTriggered(K_DOWN))
-		keyPressed[K_DOWN] = 1;
-	else keyPressed[K_DOWN] = 0;
-
-	if (input.IsKeyActionTriggered(K_LEFT))
-		keyPressed[K_LEFT] = 1;
-	else keyPressed[K_LEFT] = 0;
-
-	if (input.IsKeyActionTriggered(K_RIGHT))
-		keyPressed[K_RIGHT] = 1;
-	else keyPressed[K_RIGHT] = 0;
-
-	return keyPressed;
-}
-int* Tank::HandleMouse(InputManager &input, int keyPressed[]) {
-
-	if (input.isMouseActionTriggered(M_LEFT))
-		keyPressed[M_LEFT] = 1;
-	else keyPressed[M_LEFT] = 0;
-	if (input.isMouseActionTriggered(M_RIGHT))
-		keyPressed[M_RIGHT] = 1;
-	else keyPressed[M_RIGHT] = 0;
-
-	return keyPressed;
 }
 
 int Tank::GetId() {
