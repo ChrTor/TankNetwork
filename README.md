@@ -1,4 +1,4 @@
 # TankNetwork
 Online Tank shooter game
 
-Free for all tank-game using SFML - https://www.sfml-dev.org/ 
+Free-for-all shooter game using SFML - https://www.sfml-dev.org/ 
